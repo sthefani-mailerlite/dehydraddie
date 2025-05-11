@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dehydraddie 💧⛳</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 30px 10px;
+      background: url('https://i.postimg.cc/w3803MMD/Hotels-Business-Website.png') center top no-repeat;
+      background-size: cover;
+      background-color: #d7f8f5;
+      font-family: 'VT323', monospace;
+      color: #003c3c;
+      text-align: center;
+    }
+
+    input, select, button {
+      padding: 10px;
+      font-size: 20px;
+      border: 2px solid #004d40;
+      border-radius: 5px;
+      margin: 5px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    #log, #history {
+      margin-top: 30px;
+      font-size: 22px;
+    }
+
+    .emoji-cup {
+      font-size: 48px;
+      margin-top: 20px;
+    }
+
+    .winner {
+      font-size: 24px;
+      margin-top: 10px;
+      color: #004d40;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🏌️‍♂️ Dehydraddie 💧</h1>
+
+  <input id="name" placeholder="your name" />
+  <input id="amount" type="number" placeholder="water" />
+  <select id="unit">
+    <option value="ml">ml</option>
+    
+  </select>
+  <button onclick="addWater()">💧 Log Your Swing</button>
+  <button onclick="wrapUpDay()">📊 Wrap Up Day</button>
+
+  <div class="emoji-cup">⛳</div>
+
+  <div id="log"></div>
+  <div id="history"></div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBaVq_MLfA1KDvaEDeuK_yp3iHu5kSWhnk",
+      authDomain: "dehydraddie.firebaseapp.com",
+      databaseURL: "https://dehydraddie-default-rtdb.firebaseio.com",
+      projectId: "dehydraddie",
+      storageBucket: "dehydraddie.firebasestorage.app",
+      messagingSenderId: "924277051449",
+      appId: "1:924277051449:web:d61fc8cc06a9a21dbfbde8",
+      measurementId: "G-M4Z7P355PE"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const MAX_ML = 4000;
+    const ML_PER_OZ = 29.5735;
+
+    function convertToML(amount, unit) {
+      return unit === 'oz' ? amount * ML_PER_OZ : amount;
+    }
+
+    function convertFromML(ml, unit) {
+      return unit === 'oz' ? (ml / ML_PER_OZ).toFixed(1) : ml;
+    }
+
+    
+function addWater() {
+  const nameInput = document.getElementById('name');
+  const amountInput = document.getElementById('amount');
+  const name = nameInput.value.trim().toLowerCase();
+  const amount = parseFloat(amountInput.value);
+
+  if (!name || isNaN(amount)) {
+    alert("Enter your name and a valid number!");
+    return;
+  }
+
+  const userRef = db.ref('users/' + name);
+  userRef.once('value').then(snapshot => {
+    const current = snapshot.val() ? snapshot.val().amount : 0;
+    const newTotal = Math.min(current + amount, 4000);
+    userRef.set({ amount: newTotal });
+  });
+
+  amountInput.value = '';
+}
+
+
+      amountInput.value = '';
+    }
+
+    function wrapUpDay() {
+      db.ref('users').once('value').then(snapshot => {
+        const data = snapshot.val() || {};
+        let winner = null;
+        let topAmount = 0;
+        const today = new Date().toISOString().slice(0, 10);
+
+        for (let name in data) {
+          if (data[name].amount > topAmount) {
+            topAmount = data[name].amount;
+            winner = name;
+          }
+        }
+
+        if (winner) {
+          const historyRef = db.ref('history/' + today);
+          historyRef.set({ winner: winner, amount: topAmount });
+          alert(`🏆 ${winner} wins today with ${Math.round(topAmount)} ml!`);
+        }
+
+        db.ref('users').set({});
+      });
+    }
+
+    db.ref('users').set({}); // 🔁 Wipes current scores (fresh start)
+
+    db.ref('users').on('value', snapshot => {
+      const data = snapshot.val() || {};
+      const log = document.getElementById('log');
+      log.innerHTML = "<h2>🥤 Leaderboard</h2>";
+
+      const currentUser = document.getElementById('name').value.trim().toLowerCase();
+      const selectedUnit = document.getElementById('unit').value;
+
+      for (let name in data) {
+        const ml = data[name].amount;
+        const display = convertFromML(ml, selectedUnit);
+        const unitLabel = selectedUnit === 'oz' ? 'oz' : 'ml';
+        log.innerHTML += `<p><strong>${name}</strong>: ${display} ${unitLabel}</p>`;
+      }
+    });
+
+    db.ref('history').set({}); // 🔁 Clears all previous winners
+
+    db.ref('history').on('value', snapshot => {
+      const data = snapshot.val() || {};
+      const history = document.getElementById('history');
+      history.innerHTML = "<h2>📅 Past Winners</h2>";
+      for (let day in data) {
+        history.innerHTML += `<p>${day}: 🏆 <strong>${data[day].winner}</strong> (${Math.round(data[day].amount)} ml)</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
