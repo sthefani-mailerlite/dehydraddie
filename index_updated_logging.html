@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dehydraddie 💧</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Press Start 2P', cursive;
+      background: url('https://i.postimg.cc/w3803MMD/Hotels-Business-Website.png') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 40px auto;
+      width: 90%;
+      max-width: 900px;
+      text-align: center;
+    }
+    input, select, button {
+      font-family: 'Press Start 2P', cursive;
+      margin: 5px;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏌️ Dehydraddie 💧</h1>
+    <input type="text" placeholder="your name">
+    <input type="text" placeholder="water">
+    <select><option value="ml">ml</option></select>
+    <button>💧 Log Your Swing</button>
+    <button>📊 Wrap Up Day</button>
+    <h2>🥤 Leaderboard</h2>
+    <p>sthef: 500 ml</p>
+    <h2>📅 Past Winners</h2>
+  </div>
+
+<script>
+  const logButton = document.querySelector('button:nth-of-type(1)');
+  const wrapUpButton = document.querySelector('button:nth-of-type(2)');
+  const nameInput = document.querySelector('input[type="text"]:nth-of-type(1)');
+  const amountInput = document.querySelector('input[type="text"]:nth-of-type(2)');
+  const leaderboard = document.querySelector('h2:nth-of-type(1)').nextElementSibling;
+  const pastWinners = document.querySelector('h2:nth-of-type(2)');
+
+  let scores = JSON.parse(localStorage.getItem('scores')) || {};
+  let winners = JSON.parse(localStorage.getItem('winners')) || [];
+
+  function updateLeaderboard() {
+    leaderboard.innerHTML = '';
+    Object.entries(scores).forEach(([name, amount]) => {
+      const p = document.createElement('p');
+      p.textContent = `${name}: ${amount} ml`;
+      leaderboard.appendChild(p);
+    });
+  }
+
+  logButton.addEventListener('click', () => {
+    const name = nameInput.value.trim().toLowerCase();
+    const amount = parseInt(amountInput.value.trim());
+
+    if (!name || isNaN(amount)) return;
+
+    scores[name] = (scores[name] || 0) + amount;
+    localStorage.setItem('scores', JSON.stringify(scores));
+    updateLeaderboard();
+    amountInput.value = '';
+  });
+
+  wrapUpButton.addEventListener('click', () => {
+    const entries = Object.entries(scores);
+    if (entries.length === 0) return;
+
+    const [winner, max] = entries.reduce((a, b) => (b[1] > a[1] ? b : a));
+    const date = new Date().toISOString().split('T')[0];
+    winners.push(`${date}: 🏆 ${winner} (${max} ml)`);
+    localStorage.setItem('winners', JSON.stringify(winners));
+    scores = {};
+    localStorage.setItem('scores', JSON.stringify(scores));
+    updateLeaderboard();
+
+    const p = document.createElement('p');
+    p.textContent = winners[winners.length - 1];
+    pastWinners.appendChild(p);
+  });
+
+  updateLeaderboard();
+  winners.forEach(entry => {
+    const p = document.createElement('p');
+    p.textContent = entry;
+    pastWinners.appendChild(p);
+  });
+</script>
+
+</body>
+</html>
